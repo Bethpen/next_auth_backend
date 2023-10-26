@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import bcryptjs from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 
 import connect from "@/dbConfig/dbConfig";
@@ -13,37 +14,44 @@ connect();
 export const POST =async (request:NextRequest) => {
     try {
         const reqBody = await request.json();
-        const {firstname, lastname, password, phone_number, email} = reqBody;
+        const {password, phone_number} = reqBody;
 
         console.log(reqBody);
         
+        // const salt = await bcryptjs.genSalt(10);
+        // const hashedPassword = await bcryptjs.hash(password, salt)
+        
+        const user = await User.findOne({phone_number});
+        
+        if(!user){
+            return NextResponse.json({error: "User does not exists"}, {status: 400})
+        }
+        
+        const validpassword = await bcryptjs.compare(password, user.password)
 
-        const user = await User.findOne({email});
-
-        if(user){
-            return NextResponse.json({error: "User already exists"}, {status: 400})
+        if(!validpassword){
+            return NextResponse.json({error: "You have entered a wrong password"}, {status: 400})
         }
 
-        const salt = await bcryptjs.genSalt(10);
-        const hashedPassword = await bcryptjs.hash(password, salt)
+        //create token data
+        const tokenData = {
+            id: user._id,
+            email: user.email,
+            phone_number: user.phone_number
+        }
 
-        const newUser = await new User({
-            firstname,
-            lastname,
-            password: hashedPassword,
-            phone_number,
-            email
-        })
+        //create token
+        const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!, {expiresIn: "1d"})
 
-        const savedUser = await newUser.save();
-        console.log(savedUser)
+        const response = NextResponse.json({
+            message: "Login Successful",
+            user
+        }, {status: 200})
 
-        return NextResponse.json({
-            message: "User successfully created",
-            savedUser,
-            success: true
-        }, {status: 201})
+        //add the token to cookies
+        response.cookies.set("token", token, {httpOnly: true})
 
+        return response;
 
     } catch (error: any) {
             NextResponse.json({error: error.message}, {status: 500})

@@ -15,9 +15,6 @@ export const POST =async (request:NextRequest) => {
         const reqBody = await request.json();
         const {firstname, lastname, password, phone_number, email} = reqBody;
 
-        console.log(reqBody);
-        
-
         const user = await User.findOne({email});
 
         if(user){
