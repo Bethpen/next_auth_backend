@@ -57,3 +57,26 @@ export const POST =async (request:NextRequest) => {
             NextResponse.json({error: error.message}, {status: 500})
     }
 }
+
+export const GET =async () => {
+    try {
+
+        const users = await User.find({}, 'firstname lastname email phone_number');
+
+        if(!users){
+            return NextResponse.json({error: "No user found"}, {status: 400})
+        }
+
+        console.log(users)
+
+        return NextResponse.json({
+            message: "Users fetched successfully",
+            users,
+            success: true
+        }, {status: 200})
+
+
+    } catch (error: any) {
+            NextResponse.json({error: error.message}, {status: 500})
+    }
+}
