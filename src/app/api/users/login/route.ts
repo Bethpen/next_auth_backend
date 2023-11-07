@@ -21,23 +21,25 @@ export const POST =async (request:NextRequest) => {
         // const salt = await bcryptjs.genSalt(10);
         // const hashedPassword = await bcryptjs.hash(password, salt)
         
-        const user = await User.findOne({phone_number});
+        const foundUser = await User.findOne({phone_number});
         
-        if(!user){
+        if(!foundUser){
             return NextResponse.json({error: "User does not exists"}, {status: 400})
         }
         
-        const validpassword = await bcryptjs.compare(password, user.password)
+        const validpassword = await bcryptjs.compare(password, foundUser.password)
 
         if(!validpassword){
             return NextResponse.json({error: "You have entered a wrong password"}, {status: 400})
         }
 
+        
+
         //create token data
         const tokenData = {
-            id: user._id,
-            email: user.email,
-            phone_number: user.phone_number
+            id: foundUser._id,
+            email: foundUser.email,
+            phone_number: foundUser.phone_number
         }
 
         //create token
@@ -45,7 +47,13 @@ export const POST =async (request:NextRequest) => {
 
         return NextResponse.json({
             message: "Login Successful",
-            token
+            token,
+            user: {
+                firstname: foundUser.firstname,
+                lastname: foundUser.lastname,
+                email: foundUser.email,
+                phone_number: foundUser.phone_number
+            }
         }, {status: 200})
 
         // //add the token to cookies
